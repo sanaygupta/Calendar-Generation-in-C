@@ -137,88 +137,58 @@ It then prints blank spaces before the first date, according to the weekday on w
 
 ```c
 #include <stdio.h>
-#include <time.h>
 
-int main()
-{
-    int year, month, day;
-
-    int daysInMonth[] = {
-        31, 28, 31, 30, 31, 30,
-        31, 31, 30, 31, 30, 31
+int main() {
+    int year, month, day, startDay, i;
+    int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    const char *months[] = {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
     };
-
-    char *monthNames[] = {
-        "January", "February", "March", "April",
-        "May", "June", "July", "August",
-        "September", "October", "November", "December"
-    };
-
-    char *weekDays[] = {
-        "Sun", "Mon", "Tue", "Wed",
-        "Thu", "Fri", "Sat"
-    };
-
-    struct tm date = {0};
 
     printf("Enter year: ");
-
-    if (scanf("%d", &year) != 1 || year < 1)
-    {
-        printf("Invalid year.\n");
+    if (scanf("%d", &year) != 1) {
+        printf("Invalid input.\n");
         return 1;
     }
 
-    if ((year % 400 == 0) ||
-        (year % 4 == 0 && year % 100 != 0))
-    {
+    /* Adjust February for leap years */
+    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
         daysInMonth[1] = 29;
     }
 
-    for (month = 0; month < 12; month++)
-    {
-        date = (struct tm){0};
+    /* Calculate starting day of the week for Jan 1 (0 = Sun, 1 = Mon, ..., 6 = Sat) */
+    startDay = ((year - 1) * 365 + (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400 + 1) % 7;
+    if (startDay < 0) {
+        startDay += 7;
+    }
 
-        date.tm_year = year - 1900;
-        date.tm_mon = month;
-        date.tm_mday = 1;
-        date.tm_isdst = -1;
+    printf("\n==================== Calendar - %d ====================\n", year);
 
-        if (mktime(&date) == (time_t)-1)
-        {
-            printf("Unable to calculate calendar.\n");
-            return 1;
-        }
+    for (month = 0; month < 12; month++) {
+        printf("\n------------ %s %d ------------\n", months[month], year);
+        printf(" Sun Mon Tue Wed Thu Fri Sat\n");
 
-        printf("\n\n       %s %d\n",
-               monthNames[month], year);
-
-        for (int i = 0; i < 7; i++)
-        {
-            printf("%4s", weekDays[i]);
-        }
-
-        printf("\n");
-
-        for (int i = 0; i < date.tm_wday; i++)
-        {
+        /* Indent the first day of the month */
+        for (i = 0; i < startDay; i++) {
             printf("    ");
         }
 
-        for (day = 1; day <= daysInMonth[month]; day++)
-        {
+        /* Print all dates of the current month */
+        for (day = 1; day <= daysInMonth[month]; day++) {
             printf("%4d", day);
-
-            if ((date.tm_wday + day) % 7 == 0)
-            {
+            if ((startDay + day) % 7 == 0) {
                 printf("\n");
             }
         }
 
-        if ((date.tm_wday + daysInMonth[month]) % 7 != 0)
-        {
+        /* Move to a new line if the last week didn't end on Saturday */
+        if ((startDay + daysInMonth[month]) % 7 != 0) {
             printf("\n");
         }
+
+        /* Carry over the starting weekday to the next month */
+        startDay = (startDay + daysInMonth[month]) % 7;
     }
 
     return 0;
